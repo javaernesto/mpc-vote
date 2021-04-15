@@ -1,4 +1,6 @@
 import numpy as np
+import socket
+import json
 
 # Define parameters of the election
 num_choice = 5
@@ -133,6 +135,35 @@ class svote(object):
         '''
 
         return np.array_str(self.data)
+
+def socket_send(vote: svote, client: int, address, port: int, buffer_size=2048):
+    '''
+    Sends one individual message to a server, then closes the connection.
+    The message should be of type svote.
+
+    param vote:    svote to be transmitted to one of the players
+    param client:  id of the client (can be a public key or a certificate)
+    param address: address of the player (in our case, localhost)
+    param ports:   port of one of the players
+    '''
+
+    soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    try:
+        soc.connect((address, port))
+        print("Connected to server.")
+    except socket.error as e:
+        print(str(e))
+    
+    vote_dict = {"id":   client,
+                 "vote": vote.data.tolist()}
+    s = json.dumps(vote_dict)
+    soc.send(str.encode(s))
+    print("Sent a message to " + address + " : " + str(port))
+
+    soc.shutdown(socket.SHUT_RDWR)
+    soc.close()
 
 def main():
     myVote = cvote(np.array([1, 0, 0, 0, 0]))
