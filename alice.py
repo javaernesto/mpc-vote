@@ -3,6 +3,11 @@ import os
 from _thread import start_new_thread
 import json
 
+from common import *
+
+# Vecteur de votes
+votes = []
+
 ServerSideSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ServerSideSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 ServerSideSocket.settimeout(10.0)
@@ -17,16 +22,20 @@ except socket.error as e:
 print('Socket is listening...')
 ServerSideSocket.listen(5)
 
-def multi_threaded_client(connection):
+def multi_threaded_client(connection, buffer_size=2048):
 
     while True:
-        data = connection.recv(2048)
+        data = connection.recv(buffer_size)
         if not data:
             break
-        # response = 'Server message: ' + data.decode('utf-8')      
-        # connection.sendall(str.encode(response))
         vote = json.loads(data)
-        print(type(vote))
+        votes.append(vote)
+        if vote['id'] == -1:
+            print("Welcome Bob")
+            print("Bob sent ", vote)
+            votes.append(vote)
+            break
+
         print("I have received: ", vote)
     connection.close()
 
@@ -40,11 +49,17 @@ while True:
     except socket.timeout:
         print("The vote is over")
         print("Waiting for Bob's vector")
-        try:
-            bob, address = ServerSideSocket.accept()
-            print('Connected to: ' + address[0] + ':' + str(address[1]))
-            start_new_thread(multi_threaded_client, (bob, ))
-        except socket.timeout:
-            print("Election results: ")
+        while True:
+            try:
+                bob, address = ServerSideSocket.accept()
+                print('Connected to: ' + address[0] + ':' + str(address[1]))
+                start_new_thread(multi_threaded_client, (bob, ))
+            except socket.timeout:
+                myVotes = sum_votes(votes[:-2])
+                bobVote = svote(np.array(votes[-1]['vote']))
+                print("My votes: ", myVotes)
+                print("Bob's votes: ", bobVote)
+                print("Election results: ", myVotes + bobVote)
+                break
         break
 ServerSideSocket.close()

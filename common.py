@@ -5,7 +5,16 @@ import json
 # Define parameters of the election
 num_choice = 5
 num_voters = 3
-P = 17
+
+# Different choices of prime P for different bit lengths
+P_VALUES = { 32: 2147565569, \
+             64: 9223372036855103489, \
+             128: 170141183460469231731687303715885907969, \
+             192: 3138550867693340381917894711603833208051177722232017256453, \
+             256: 57896044618658097711785492504343953926634992332820282019728792003956566065153, \
+             512: 6703903964971298549787012499102923063739682910296196688861780721860882015036773488400937149083451713845015929093243025426876941405973284973216824503566337 }
+
+P = P_VALUES[32]
 
 # Define the objets used during the election
 
@@ -33,7 +42,7 @@ class cvote(object):
         for i in range(num_choice):
             s[i] = (self.data[i] + other.data[i]) % P
 
-        return s
+        return cvote(s)
 
     def __sub__(self, other):
         '''
@@ -44,7 +53,7 @@ class cvote(object):
         for i in range(num_choice):
             s[i] = (self.data[i] - other.data[i]) % P
 
-        return s
+        return cvote(s)
 
     def __str__(self):
         '''
@@ -101,7 +110,7 @@ class svote(object):
     def __init__(self, data, size=num_choice):
         '''
         param data: masked data of the vote (for example a list or numpy array object) 
-        param c:    number of choices, i.e. size of the vector cvote
+        param c:    number of choices, i.e. size of the vector svote
         '''
 
         self.data = data
@@ -116,7 +125,7 @@ class svote(object):
         for i in range(num_choice):
             s[i] = (self.data[i] + other.data[i]) % P
 
-        return s
+        return svote(s)
 
     def __sub__(self, other):
         '''
@@ -127,7 +136,7 @@ class svote(object):
         for i in range(num_choice):
             s[i] = (self.data[i] - other.data[i]) % P
 
-        return s
+        return svote(s)
 
     def __str__(self):
         '''
@@ -164,6 +173,20 @@ def socket_send(vote: svote, client: int, address, port: int, buffer_size=2048):
 
     soc.shutdown(socket.SHUT_RDWR)
     soc.close()
+
+def sum_votes(votes: list):
+    '''
+    Sums the svotes or cvotes received modulo P
+
+    param votes: a list of dicts, each containing the voter key and his svote
+    '''
+
+    total = svote(np.zeros(num_choice, dtype=int))
+
+    for i in range(len(votes)):
+        total += svote(np.array(votes[i]['vote']))
+
+    return total
 
 def main():
     myVote = cvote(np.array([1, 0, 0, 0, 0]))
