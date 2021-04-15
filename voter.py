@@ -5,7 +5,7 @@ import sys
 
 from common import *
 
-def send(vote: cvote, client: int, address, ports: tuple, buffer_size=2048):
+def send(vote: cvote, address, ports: tuple, buffer_size=2048):
     '''
     Sends the vote to the two verifiers (players) as two separate svotes (shares) after applying
     the method getShares().
@@ -23,8 +23,8 @@ def send(vote: cvote, client: int, address, ports: tuple, buffer_size=2048):
     pAlice, pBob = ports
 
     # Sending each svote to the players
-    socket_send(a, client, address, pAlice)
-    socket_send(b, client, address, pBob)
+    socket_send(a, address, pAlice)
+    socket_send(b, address, pBob)
     
 
 def main():
@@ -39,8 +39,8 @@ def main():
         j = np.random.randint(0, num_choice)
         v = np.zeros(num_choice, dtype=int)
         v[j] = 1
-        myVote = cvote(v) 
-        send(myVote, i + 1, address, ports)
+        myVote = cvote(v, i + 1) 
+        send(myVote, address, ports)
 
 if __name__ == '__main__':
     main()

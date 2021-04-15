@@ -51,7 +51,8 @@ while True:
     except socket.timeout:
         print("The vote is over")
         print("Sending my vector to Alice")
-        myVotes = sum_votes(votes)
-        socket_send(myVotes, -1, host, 2004)
+        # Bob's id is -1 (all the other ids are positive)
+        myVotes = sum_votes(votes, -1)
+        socket_send(myVotes, host, 2004)
         break
 ServerSideSocket.close()

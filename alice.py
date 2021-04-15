@@ -63,6 +63,8 @@ while True:
                 start_new_thread(multi_threaded_client, (bob, ))
             # When the timer is reached again, Alice sums the votes and recovers the results
             except socket.timeout:
+                # The last item of 'votes' contains the voted sent by Bob.
+                # Therefore we must sum all but the last of Alice's votes to get Alice's vector
                 myVotes = sum_votes(votes[:-2])
                 bobVote = svote(np.array(votes[-1]['vote']))
                 print("My votes: ", myVotes)

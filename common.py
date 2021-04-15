@@ -18,19 +18,21 @@ P = P_VALUES[32]
 
 # Define the objets used during the election
 
-class cvote(object):
+class cvote(dict):
     '''
     Object clear vote consisting in a vector of zeroes with a one in position of vote.
     We can check is vote is valid, blank or null
     '''
 
-    def __init__(self, data, size=num_choice):
+    def __init__(self, data, id=None, size=num_choice):
         '''
+        param id;   id of the person issuing the vote (can be a cert key, a public key, ...)
         param data: data of the vote (for example a list or numpy array object) 
         param c:    number of choices, i.e. size of the vector cvote
         '''
 
         self.data = data
+        self.id = id
         self.size = size
 
     def __add__(self, other):
@@ -97,23 +99,25 @@ class cvote(object):
         mask = np.random.randint(P, size=num_choice)
 
         # Creation of shares
-        aa, b = np.zeros(num_choice, dtype=int), svote(mask)
+        aa, b = np.zeros(num_choice, dtype=int), svote(mask, self.id)
         for i in range(num_choice):
             aa[i] = (self.data[i] - mask[i]) % P
-        a = svote(aa)
+        a = svote(aa, self.id)
 
         return (a, b)
 
 class svote(object):
     ''' Object secret vote created from clear vote. It inherits properties of cvote but is masked '''
 
-    def __init__(self, data, size=num_choice):
+    def __init__(self, data, id=None, size=num_choice):
         '''
+        param id;   id of the person issuing the vote (can be a cert key, a public key, ...)
         param data: masked data of the vote (for example a list or numpy array object) 
         param c:    number of choices, i.e. size of the vector svote
         '''
 
         self.data = data
+        self.id = id
         self.size = size
 
     def __add__(self, other):
@@ -145,7 +149,7 @@ class svote(object):
 
         return np.array_str(self.data)
 
-def socket_send(vote: svote, client: int, address, port: int, buffer_size=2048):
+def socket_send(vote: svote, address, port: int, buffer_size=2048):
     '''
     Sends one individual message to a server, then closes the connection.
     The message should be of type svote.
@@ -165,7 +169,7 @@ def socket_send(vote: svote, client: int, address, port: int, buffer_size=2048):
     except socket.error as e:
         print(str(e))
     
-    vote_dict = {"id":   client,
+    vote_dict = {"id":   vote.id,
                  "vote": vote.data.tolist()}
     s = json.dumps(vote_dict)
     soc.send(str.encode(s))
@@ -174,16 +178,16 @@ def socket_send(vote: svote, client: int, address, port: int, buffer_size=2048):
     soc.shutdown(socket.SHUT_RDWR)
     soc.close()
 
-def sum_votes(votes: list):
+def sum_votes(votes: list, id=None):
     '''
     Sums the svotes or cvotes received modulo P
 
     param votes: a list of dicts, each containing the voter key and his svote
     '''
 
-    total = svote(np.zeros(num_choice, dtype=int))
+    total = np.zeros(num_choice, dtype=int)
 
     for i in range(len(votes)):
-        total += svote(np.array(votes[i]['vote']))
+        total += np.array(votes[i]['vote'])
 
-    return total
+    return svote(total, id)
