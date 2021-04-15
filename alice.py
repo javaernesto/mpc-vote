@@ -5,12 +5,15 @@ import json
 
 from common import *
 
-# Vecteur de votes
+# Vote vector (will contain all the votes in a dict format)
 votes = []
 
+# Setting up the server
 ServerSideSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 ServerSideSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+# We set a time of 10 seconds for the election
 ServerSideSocket.settimeout(10.0)
+
 host = 'localhost'
 port = 2004
 ThreadCount = 0
@@ -22,6 +25,7 @@ except socket.error as e:
 print('Socket is listening...')
 ServerSideSocket.listen(5)
 
+# The function called by the server to handle each client as a thread
 def multi_threaded_client(connection, buffer_size=2048):
 
     while True:
@@ -39,6 +43,7 @@ def multi_threaded_client(connection, buffer_size=2048):
         print("I have received: ", vote)
     connection.close()
 
+# Doing the election
 while True:
     try:
         Client, address = ServerSideSocket.accept()
@@ -46,14 +51,17 @@ while True:
         start_new_thread(multi_threaded_client, (Client, ))
         ThreadCount += 1
         print('Thread Number: ' + str(ThreadCount))
+    # When timer is reached, we begin counting the votes
     except socket.timeout:
         print("The vote is over")
         print("Waiting for Bob's vector")
         while True:
+            # Alice asks Bob for his vector
             try:
                 bob, address = ServerSideSocket.accept()
                 print('Connected to: ' + address[0] + ':' + str(address[1]))
                 start_new_thread(multi_threaded_client, (bob, ))
+            # When the timer is reached again, Alice sums the votes and recovers the results
             except socket.timeout:
                 myVotes = sum_votes(votes[:-2])
                 bobVote = svote(np.array(votes[-1]['vote']))

@@ -187,21 +187,3 @@ def sum_votes(votes: list):
         total += svote(np.array(votes[i]['vote']))
 
     return total
-
-def main():
-    myVote = cvote(np.array([1, 0, 0, 0, 0]))
-    myOtherVote = cvote(np.array([0, 1, 0, 0 ,0]))
-
-    print("Test cvotes")
-    print(myVote)
-    print(myVote + myOtherVote)
-    print("isValid: ", myVote.isValid())
-    print("isBlank: ", myVote.isBlank())
-
-    print("Test svotes")
-    a, b = myVote.getShares()
-    print(a)
-    print(b)
-
-if __name__ == '__main__':
-    main()

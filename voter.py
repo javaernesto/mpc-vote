@@ -34,7 +34,7 @@ def main():
 
     # We send the vote to both players
     n = int(sys.argv[1])
-    
+    # For now, we choose randomly the voter's choice
     for i in range(n):
         j = np.random.randint(0, num_choice)
         v = np.zeros(num_choice, dtype=int)
