@@ -4,11 +4,10 @@ import json
 
 # Define parameters of the election
 num_choice = 5
-num_voters = 3
 
 # Different choices of prime P for different bit lengths
-P_VALUES = { 32: 2147565569, \
-             64: 9223372036855103489, \
+P_VALUES = { 32:  2147565569, \
+             64:  9223372036855103489, \
              128: 170141183460469231731687303715885907969, \
              192: 3138550867693340381917894711603833208051177722232017256453, \
              256: 57896044618658097711785492504343953926634992332820282019728792003956566065153, \
@@ -18,7 +17,7 @@ P = P_VALUES[32]
 
 # Define the objets used during the election
 
-class cvote(dict):
+class cvote(object):
     '''
     Object clear vote consisting in a vector of zeroes with a one in position of vote.
     We can check is vote is valid, blank or null
@@ -26,8 +25,8 @@ class cvote(dict):
 
     def __init__(self, data, id=None, size=num_choice):
         '''
-        param id;   id of the person issuing the vote (can be a cert key, a public key, ...)
-        param data: data of the vote (for example a list or numpy array object) 
+        param id;   id of the person issuing the vote (can be a cert key, a public key, ...)\\
+        param data: data of the vote (for example a list or numpy array object)\\
         param c:    number of choices, i.e. size of the vector cvote
         '''
 
@@ -106,58 +105,21 @@ class cvote(dict):
 
         return (a, b)
 
-class svote(object):
-    ''' Object secret vote created from clear vote. It inherits properties of cvote but is masked '''
+class svote(cvote):
+    ''' 
+    Object secret vote created from clear vote. It inherits properties of cvote but is masked.
+    For now it only inherits the properties of cvote, but we eventually add properties only for svote.
+    '''
 
-    def __init__(self, data, id=None, size=num_choice):
-        '''
-        param id;   id of the person issuing the vote (can be a cert key, a public key, ...)
-        param data: masked data of the vote (for example a list or numpy array object) 
-        param c:    number of choices, i.e. size of the vector svote
-        '''
-
-        self.data = data
-        self.id = id
-        self.size = size
-
-    def __add__(self, other):
-        '''
-        Adds two svotes (modulo P)
-        '''
-
-        s = np.zeros(num_choice, dtype=int)
-        for i in range(num_choice):
-            s[i] = (self.data[i] + other.data[i]) % P
-
-        return svote(s)
-
-    def __sub__(self, other):
-        '''
-        Substracts two svotes (modulo P)
-        '''
-
-        s = np.zeros(num_choice, dtype=int)
-        for i in range(num_choice):
-            s[i] = (self.data[i] - other.data[i]) % P
-
-        return svote(s)
-
-    def __str__(self):
-        '''
-        Allows printing data
-        '''
-
-        return np.array_str(self.data)
-
-def socket_send(vote: svote, address, port: int, buffer_size=2048):
+def socket_send(vote: svote, address: str, port: int, buffer_size=2048):
     '''
     Sends one individual message to a server, then closes the connection.
     The message should be of type svote.
 
-    param vote:    svote to be transmitted to one of the players
-    param client:  id of the client (can be a public key or a certificate)
-    param address: address of the player (in our case, localhost)
-    param ports:   port of one of the players
+    param vote:    svote to be transmitted to one of the players\\
+    param client:  id of the client (can be a public key or a certificate)\\
+    param address: address of the player (in our case, localhost)\\
+    param port:   port of one of the players
     '''
 
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -169,8 +131,8 @@ def socket_send(vote: svote, address, port: int, buffer_size=2048):
     except socket.error as e:
         print(str(e))
     
-    vote_dict = {"id":   vote.id,
-                 "vote": vote.data.tolist()}
+    vote_dict = {'id':   vote.id,
+                 'vote': vote.data.tolist()}
     s = json.dumps(vote_dict)
     soc.send(str.encode(s))
     print("Sent a message to " + address + " : " + str(port))
@@ -188,6 +150,11 @@ def sum_votes(votes: list, id=None):
     total = np.zeros(num_choice, dtype=int)
 
     for i in range(len(votes)):
-        total += np.array(votes[i]['vote'])
+        for j in range(num_choice):
+            total[j] = (total[j] + np.array(votes[i]['vote'])[j]) % P
 
     return svote(total, id)
+
+if __name__ == "__main__":
+    myVote = svote(np.array([0, 1, 0, 0, 0]), 1)
+    print(myVote)

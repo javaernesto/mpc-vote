@@ -58,6 +58,8 @@ while True:
         while True:
             # Alice asks Bob for his vector
             try:
+                # We wait one second for Bob's vector
+                ServerSideSocket.settimeout(1.0)
                 bob, address = ServerSideSocket.accept()
                 print('Connected to: ' + address[0] + ':' + str(address[1]))
                 start_new_thread(multi_threaded_client, (bob, ))
@@ -65,8 +67,8 @@ while True:
             except socket.timeout:
                 # The last item of 'votes' contains the voted sent by Bob.
                 # Therefore we must sum all but the last of Alice's votes to get Alice's vector
-                myVotes = sum_votes(votes[:-2])
-                bobVote = svote(np.array(votes[-1]['vote']))
+                myVotes = sum_votes(votes[:-2], -2)
+                bobVote = svote(np.array(votes[-1]['vote']), -1)
                 print("My votes: ", myVotes)
                 print("Bob's votes: ", bobVote)
                 print("Election results: ", myVotes + bobVote)
