@@ -1,5 +1,6 @@
 # Executables
 *.exe
 
-# Other
+# Others
 *.pdf
+*.txt
