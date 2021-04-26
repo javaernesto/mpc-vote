@@ -42,6 +42,20 @@ def count_votes(myVote, mpi_comm):
     param mpi_comm: the MPI communicator of the other player
     '''
 
+    # This code blocks because Bcast() is blocking and checker 0 never receives from 1
+    # rank = mpi_comm.Get_rank()
+
+    # mpi_comm.Bcast(myVote, root=rank)
+    # if rank == 0:
+    #     otherVote = np.empty(num_choice, dtype=int)
+    #     mpi_comm.Bcast(otherVote, root=1)
+    # elif rank == 1:
+    #     otherVote = np.empty(num_choice, dtype=int)
+    #     mpi_comm.Bcast(otherVote, root=0)
+    
+    # result = sum_votes([myVote, otherVote])
+    # print("Results from {}: {}".format(rank, result))
+
     if mpi_comm.Get_rank() == 0:
         mpi_comm.Send([myVote, MPI.INT], dest=1)
         otherVote = np.empty(num_choice, dtype=int)
