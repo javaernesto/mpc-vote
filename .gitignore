@@ -4,3 +4,6 @@
 # Others
 *.pdf
 *.txt
+
+# __pycache__ folder
+__pycache__/
