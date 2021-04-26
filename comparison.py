@@ -68,7 +68,7 @@ def carry(p: tuple, g: tuple):
     s = (g[0] & p[1]) + g[1]
     return r, s
 
-def CarryOutAux(d: list, k: int)
+def CarryOutAux(d: list, k: int):
     '''
     param d: ([d_k]_B, ..., [d_1]_B), where [a]_B = ([a_l], ..., [a_1])
     '''
@@ -110,7 +110,7 @@ def BitLT(a: int, b: list):
     '''
 
     aBits, k = getBits(a)
-    assert k = len(b)
+    assert k == len(b)
     u = []
     for i in range(k):
         u_i = 1 - b[i]
