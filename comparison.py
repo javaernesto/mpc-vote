@@ -1,4 +1,9 @@
 ''' 
+Implementation of bit-wise and arithmetics algorithms in MPC. The main topics covered are:
+- Truncation
+- Integer comparison
+- Bit decomposition
+
 The following algorithms are detailled in the following papers:
 
 [1] https://www1.cs.fau.de/filepool/publications/octavian_securescm/smcint-scn10.pdf
@@ -6,6 +11,7 @@ The following algorithms are detailled in the following papers:
 '''
 
 import numpy as np
+import math
 
 from common import *
 
@@ -49,8 +55,8 @@ def getBits(a: int):
     '''
 
     sb = bin(a)
-    k = len(b) - 2 # We remove the '0b' prefix in string 'b'
-    b = [int(sb[i], 2) for i in range(k)]
+    k = len(sb) - 2 # We remove the '0b' prefix in string 'b'
+    b = [int(sb[i], 2) for i in range(2, k + 2)]
 
     return b, k
 
@@ -80,7 +86,7 @@ def CarryOutAux(d: list, k: int):
             u.append(u_i)
         return CarryOutAux(u[::-1], k//2)
     else:
-        return d
+        return d[0]
 
 def CarryOutCin(a: list, b: list, c: int):
     '''
@@ -110,15 +116,18 @@ def BitLT(a: int, b: list):
     '''
 
     aBits, k = getBits(a)
+    print(k)
+    print(len(b))
     assert k == len(b)
     u = []
     for i in range(k):
         u_i = 1 - b[i]
+        u.append(u_i)
     s = 1 - CarryOutCin(aBits[::-1], u[::-1], 1)
 
     return s
 
-def Mod2m(a: int, k: int, m: int, kapp: int):
+def Mod2m(a: int, k: int, m: int, kappa: int):
     '''
     Protocol Mod2m computes y = x mod 2^m for any x in [-2^(k-1), 2^(k-1) - 1] and 0 < m < k.
 
@@ -133,18 +142,35 @@ def Mod2m(a: int, k: int, m: int, kapp: int):
         r_i = np.random.randint(0, P)
         rr.append(r_i)
     rp = sum([(2**i) * r_i for r_i in rr]) # This is the shared value in field of 'r'
-    rr = r[::-1]                           # This is the bit-wise shared value of 'r'
+    rr = rr[::-1]                          # This is the bit-wise shared value of 'r'
     u = np.random.randint(0, k + kappa - m)
     r = (2**m) * u + rp
 
     c = b + r # Here we should open        # 1 round, 1 inv
     cc = c % (2**m)
+    print("cc = ", c)
     v = BitLT(cc, rr)                      # log(m) round, 2m - 2 inv
     bb = cc - rp + v * (2**m)
 
     return bb
 
-def Trunc(a: int, k: int, m: int):
+def LSB(a: int, k: int, kappa: int):
+    '''
+    Extraction of the least significant bit. We compute y = x mod 2 for x in [-2^(k-1), 2^(k-1) - 1]
+
+    param a:     [a] shared int\\
+    param k:     public integer\\
+    param kappa: security parameter
+    '''
+
+    b = np.random.randint(0, 2)                   # 1 round, 1 inv, 1 exp
+    r = np.random.randint(0, k + kappa - 1)
+    c = 2**(k-1) + a + 2*r + b_1      # 1 round, 1 inv (here we should open)
+    a_0 = (c & 1) + b - 2*(c & 1)*b_0
+
+    return a_0
+
+def Trunc(a: int, k: int, m: int, kappa: int):
     '''
     Protocol Trunc computes floor(x / 2**m) = (x - (x mod 2**m)) * 2**(-m) for any
     x in [-2^(k-1), 2^(k-1) - 1] and 0 < m < k. Equivalent  to cutting off
@@ -154,18 +180,39 @@ def Trunc(a: int, k: int, m: int):
     params k, m: public integers
     '''
 
-    aa = Mod2m(a, k, m)
+    aa = Mod2m(a, k, m, kappa)
     d = (a - aa) * ((P + 1)/2)**m # Recall that 2^-1 = (P + 1)/2
 
     return d
 
+def LTZ(a: int, k: int, kappa: int):
+    '''
+    Less Than Zero Protocol. We compute s = (x ?< 0) for any x in [-2^(k-1), 2^(k-1) - 1]
+    and return [s]
+
+    param a: [a] shared int\\
+    param k: public integer\\
+    param kappa: security parameter
+    '''
+
+    s = Trunc(a, k, k - 1, kappa)
+
+    return s
 
 def main():
-        a = [0, 1, 1, 1, 1, 0]
-        b = [0, 0, 0, 1, 0, 1]
+        # a = [0, 1, 1, 1, 1, 0]
+        # b = [0, 0, 0, 1, 0, 1]
+        # kappa = 2
+        
+        a = 512 - 13
+        b = 13
         kappa = 2
-        print(carry(b,a))
-        print(CarryOutAux([a, b], kappa))
+
+        s1 = LTZ(a, 10, kappa)
+        s2 = LTZ(b, 10, kappa)
+
+        print(s1, ", ", s2)
+        print(s1 + s2)
 
 if __name__ == '__main__':
     main()
