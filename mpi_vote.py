@@ -33,6 +33,18 @@ def getShares(vote):
 
     return (a, mask)
 
+def send_all(mpi_comm, myVote):
+    ''' Broadcasts vote from mpi_comm to every other player '''
+
+    rank = mpi_comm.Get_rank()
+    size = mpi_comm.Get_size()
+
+    for i in range(size):
+        if i != rank:
+            mpi_comm.Isend([myVote, MPI.INT], dest=i)
+            otherVote = np.empty(num_choice, dtype=int)
+            mpi_comm.Irecv([otherVote, MPI.INT], source=rank)
+
 def count_votes(myVote, mpi_comm):
     '''
     Counts vote at the end of election. Each player sends the other player his vector
@@ -45,7 +57,7 @@ def count_votes(myVote, mpi_comm):
     # This code blocks because Bcast() is blocking and checker 0 never receives from 1
     # rank = mpi_comm.Get_rank()
 
-    # mpi_comm.Bcast(myVote, root=rank)
+    # mpi_comm.bcast(myVote, root=rank)
     # if rank == 0:
     #     otherVote = np.empty(num_choice, dtype=int)
     #     mpi_comm.Bcast(otherVote, root=1)
@@ -57,13 +69,13 @@ def count_votes(myVote, mpi_comm):
     # print("Results from {}: {}".format(rank, result))
 
     if mpi_comm.Get_rank() == 0:
-        mpi_comm.Send([myVote, MPI.INT], dest=1)
+        mpi_comm.Isend([myVote, MPI.INT], dest=1)
         otherVote = np.empty(num_choice, dtype=int)
         mpi_comm.Recv([otherVote, MPI.INT], source=1)
         result = sum_votes([myVote, otherVote])
         print("Results: {}".format(result))
     elif mpi_comm.Get_rank() == 1:
-        mpi_comm.Send([myVote, MPI.INT], dest=0)
+        mpi_comm.Isend([myVote, MPI.INT], dest=0)
         otherVote = np.empty(num_choice, dtype=int)
         mpi_comm.Recv([otherVote, MPI.INT], source=0)
         result = sum_votes([myVote, otherVote])
