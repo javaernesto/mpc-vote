@@ -3,3 +3,6 @@
 
 # Other
 *.pdf
+
+# Cache
+__pycache__/
