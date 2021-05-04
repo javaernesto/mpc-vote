@@ -34,7 +34,7 @@ def main():
 	# We set a time of 10 seconds for the election
 	ServerSideSocket.settimeout(10.0)
 
-	host = 'localhost'
+	host = '137.194.183.66'
 	port = 2004
 	ThreadCount = 0
 	try:
@@ -48,6 +48,7 @@ def main():
 	# Doing the election
 	while True:
 		try:
+			
 			Client, address = ServerSideSocket.accept()
 			print('Connected to: ' + address[0] + ':' + str(address[1]))
 			start_new_thread(multi_threaded_client, (Client, ))
@@ -61,7 +62,7 @@ def main():
 				# Alice asks Bob for his vector
 				try:
 					# We wait one second for Bob's vector
-					ServerSideSocket.settimeout(1.0)
+					ServerSideSocket.settimeout(3.0)
 					bob, address = ServerSideSocket.accept()
 					print('Connected to: ' + address[0] + ':' + str(address[1]))
 					start_new_thread(multi_threaded_client, (bob, ))

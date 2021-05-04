@@ -8,16 +8,16 @@ from common import *
 def receiveVote(connection, votes, buffer_size=2048):
 	''' Receives votes from connection and appends to 'votes' '''
 
-		while True:
-			data = connection.recv(buffer_size)
-			if not data:
-				break
-			vote = json.loads(data)
-			votes.append(vote)
-			# votes.append(vote)
+	while True:
+		data = connection.recv(buffer_size)
+		if not data:
+			break
+		vote = json.loads(data)
+		votes.append(vote)
+		# votes.append(vote)
 
-			print("I have received: ", vote)
-		connection.close()
+		print("I have received: ", vote)
+	connection.close()
 
 class Player:
 	'''
@@ -149,9 +149,9 @@ class mpc:
 		return total
 
 if __name__ == '__main__':
-	Alice = Player(0, 'localhost', 2004, 10)
-	Bob = Player(1, 'localhost', 2005, 10)
-
+	Alice = Player(0, '137.194.183.66', 2004, 10)
+	Bob = Player(1, '137.194.186.2', 2005, 10)
+	
 	Runtime = mpc([Alice, Bob])
 	Runtime.start()
 
