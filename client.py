@@ -10,10 +10,14 @@ def generate_vote(candidates_number):
     return vector
 
 
-def share(x, mod):
-    x_0 = np.random.randint(0, mod, x.shape)
-    x_1 = (x-x_0) % mod
-    return x_0.tolist(), x_1.tolist()
+def secret_share(x, mod, num_players):
+    x = np.array(x) % mod
+    print(x)
+    shares = []
+    for i in range(num_players):
+        shares.append(np.random.randint(0, mod, x.shape).tolist())
+    shares[0] = ((x - np.sum(shares, 0) + np.array(shares[0])) % mod).tolist()
+    return shares
 
 
 def connect(ips, ports):
@@ -26,18 +30,22 @@ def connect(ips, ports):
 
 def send_vote(vote, player):
     for j in range(len(player)):
-        player[j].send(pickle.dumps(vote[j]))
+        message = vote[j]
+        player[j].send(pickle.dumps(message))
         player[j].close()
 
 
-def main(ips, ports):
+def main(ips, ports, mod, precision):
     text = open('client.txt', 'w')
-    for i in range(5):
-        player = connect(ips, ports)
-        vote = np.random.randint(0, 10, 5)  # generate_vote(5)
-        text.write(f'{vote.tolist()} \n')
-        vote = share(vote, 100000)
-        send_vote(vote, player)
-        print("A client has just voted")
+    player = connect(ips, ports)
+    vote = np.random.uniform(-10, 10, (4, 3, 2))
+    print(vote)
+    vote = vote*(10**precision) # generate_vote(5)
+    vote = np.floor(vote).astype(int)
+    text.write(f'{vote} \n')
+    vote = secret_share(vote, mod, len(ips))
+    send_vote(vote, player)
+    print("A client has just voted")
     text.close()
+    
 
