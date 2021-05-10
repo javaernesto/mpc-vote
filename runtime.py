@@ -2,6 +2,7 @@ import socket
 import os
 from _thread import start_new_thread
 import json
+import numpy as np
 
 from common import *
 
@@ -43,37 +44,6 @@ class Player:
 
 		return str(self.info)
 
-	def send(self, data, other):
-		'''	Sends data to other player (must be called after starting MPC runtime) '''
-
-		soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-		try:
-			soc.connect((other.host, other.port))
-			print("Player {} send data to player {}.".format(self.pid, other.pid))
-		except socket.error as e:
-			print(str(e))
-
-		s = json.dumps(data)
-		soc.send(str.encode(s))
-
-		soc.shutdown(socket.SHUT_RDWR)
-		soc.close()
-		
-	def recv(self, other, buffer_size=2048):
-		''' Receives data from another player '''
-		
-		conn, addr = self.conn.accept()
-		while True:
-			bdata = conn.recv(buffer_size)
-			if not bdata:
-				break
-			data = json.loads(bdata)
-			print("Player {} received {} from player {}".format(self.pid, data, other.pid))
-
-		conn.close()
-
 	def sumVotes(self):
 		''' Sums the votes received by the player '''
 
@@ -96,15 +66,26 @@ class mpc:
 		'''	Initializes the MPC runtime with number of players '''
 
 		self.players = players
+		self.provider = Player(0,'localhost', 2000)
 
 	def addPlayer(self, player: Player):
 		'''	Adds a player (pid, host, port) to the MPC runtime '''
 
-		self.players.append(player.info)
+		self.players.append(player)
 
 	def start(self, timeout=10):
 		'''	Starts the MPC runtime '''
 
+		# Start provider
+		try:
+				self.provider.conn.bind((provider.host, provider.port))
+			except socket.error as e:
+				print(str(e))
+
+			print("Provider is connected...")
+			provider.conn.listen()
+
+		# Start players
 		for player in self.players:
 
 			try:
@@ -148,9 +129,92 @@ class mpc:
 		print("Election results: ", total)
 		return total
 
+	def send(self, data, player):
+		'''	Sends data to other player (must be called after starting MPC runtime) '''
+
+		soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+		try:
+			soc.connect((player.host, player.port))
+			print("Player {} send data to player {}.".format(self.pid, other.pid))
+		except socket.error as e:
+			print(str(e))
+
+		s = json.dumps(data)
+		soc.send(str.encode(s))
+
+		soc.shutdown(socket.SHUT_RDWR)
+		soc.close()
+		
+	def recv(self, player, buffer_size=2048):
+		''' Receives data from another player '''
+		
+		conn, addr = player.conn.accept()
+		while True:
+			bdata = conn.recv(buffer_size)
+			if not bdata:
+				break
+			data = json.loads(bdata)
+			print("Player {} received {} from player {}".format(player.pid, data, other.pid))
+
+		conn.close()
+		return data
+
+	def add(self, a: int, b: int, isConst=False):
+		''' Secure addition of a and b '''
+
+		if isConst:
+			if player.pid == 1:
+				return (a + b) % P
+			return a % P
+		else:	
+			return (a + b) % P
+
+	def sub(self, a: int, b: int, isConst=False):
+		''' Secure addition of a and b '''
+
+		if isConst:
+			if player.pid == 1:
+				return (a - b) % P
+			return a % P
+		else:	
+			return (a - b) % P
+
+	def getShares(x, size=num_choice):
+		''' Creates shares for MPC players '''
+
+		if type(x) != np.ndarray:
+			x = np.array(x)
+
+		shares = []
+		for _ in range(len(self.players)):
+			shares.append(np.random.randint(0, P, size=size)
+		shares[0] = (x - np.sum(shares, 0) + shares[0]) % P
+
+		return shares
+
+	def getTriples(size=num_choice):
+		''' Creates multiplication triple '''
+
+		aa = np.random.randint(0, P, size)
+		bb = np.random.randint(0, P, size)
+		cc = (a * b) % P
+		a = getShares(aa)
+		b = getShares(bb)
+		c = getShares(cc)
+		
+		return a, b, c
+
+
+	def mul(self, a: int, b: int):
+		''' Secure multiplication of a and b '''
+
+		aa, bb, cc = getTriples()
+
 if __name__ == '__main__':
-	Alice = Player(0, '137.194.183.66', 2004, 10)
-	Bob = Player(1, '137.194.186.2', 2005, 10)
+	Alice = Player(0, 'localhost', 2004, 10)
+	Bob = Player(1, 'localhost', 2005, 10)
 	
 	Runtime = mpc([Alice, Bob])
 	Runtime.start()

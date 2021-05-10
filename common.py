@@ -190,23 +190,5 @@ def check_voters(a: list, b: list):
 	
 	return (aa, bb)
 
-class Party:
-	''' Information about a party in the MPC protocol. '''
-
-	__slots__ = 'pid', 'host', 'port'
-
-	def __init__(self, pid, host=None, port=None):
-		''' Initialize a party '''
-		self.pid = pid
-		self.host = host
-		self.port = port
-
-	def __repr__(self):
-		''' String representation of the party. '''
-		if self.host is None:
-			return f'<Party {self.pid}>'
-
-		return f'<Party {self.pid}: {self.host}:{self.port}>'
-
 # Testing
 # if __name__ == "__main__":
