@@ -138,8 +138,12 @@ def socket_send(vote: svote, address: str, port: int, buffer_size=2048):
 	except socket.error as e:
 		print(str(e))
 	
-	vote_dict = vote.todict()
-	s = json.dumps(vote_dict)
+	if isinstance(vote, str):
+		s = json.dumps(vote)
+	else:	
+		vote_dict = vote.todict()
+		s = json.dumps(vote_dict)
+
 	soc.send(str.encode(s))
 	print("Sent a message to " + address + " : " + str(port))
 

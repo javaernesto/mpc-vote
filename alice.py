@@ -34,7 +34,7 @@ def main():
 	# We set a time of 10 seconds for the election
 	ServerSideSocket.settimeout(10.0)
 
-	host = '137.194.183.66'
+	host = 'localhost'
 	port = 2004
 	ThreadCount = 0
 	try:
