@@ -1,6 +1,7 @@
 import sys
 import argparse
 import json
+
 import numpy as np
 
 try:
@@ -8,12 +9,12 @@ try:
     from mpyc.random import randint
 except ImportError:
     print("Error importing MPyC...")
-    print("Please visit https://www.win.tue.nl/~berry/mpyc/ for installing MPyC")
+    print("Please visit https://github.com/lschoe/mpyc for installing MPyC")
     sys.exit(1)
    
 # MPC params
 m = len(mpc.parties)
-mpc.threshold = 0
+mpc.threshold = 0       # No secrecy
 
 # MPC types
 secint = mpc.SecInt(64)
@@ -30,17 +31,21 @@ def setup():
 
     args = parser.parse_args()
 
+    if args.read_file and (args.voters or args.choices):
+        print("Error parsing config: --read-file and -v | -c are mutually exclusive")
+        sys.exit(2)
+
     if args.read_file:
         filename = args.read_file
         with open(filename, 'r') as f:
             content = f.read().splitlines()
         # Check all votes have the same length
-        assert all(len(line) == len(line[0]) for line in content[1:])
         num_choice = len(json.loads(content[0]))
+        assert all(len(json.loads(line)) == num_choice for line in content[1:]), "Bad votes file. Try again"
         # Check number of votes
         num_voters = len(content)
 
-        return num_choice, num_voters
+        return num_choice, num_voters, filename
 
     if args.voters:
         num_voters = args.voters
@@ -55,10 +60,10 @@ def setup():
         num_choice = 5
         print("Setting number of choices to default = {}".format(num_choice))
 
-    return num_choice, num_voters
+    return num_choice, num_voters, None
 
 # Config election parameters
-num_choice, num_voters = setup()
+num_choice, num_voters, filename = setup()
 
 def write_votes_to_file(filename: str) -> None:
     ''' Writes a designated number of random votes into file '''
@@ -103,7 +108,7 @@ async def to_vote(sec_c: secint) -> list:
     
     return sec
 
-async def elect() -> list:
+async def elect_random() -> list:
     ''' Do the election. Repeat randomly `num_voters` times a vote '''
 
     votes = []
@@ -120,20 +125,18 @@ async def elect() -> list:
 
     return votes, votes_sum   
 
-async def reveal_votes() -> list:
+async def reveal_votes(sec_vec: list) -> list:
     ''' Reveals the result of the election (as a vector containing each number of votes by coordinate) '''
     
-    _, res = await elect()
-    Results = await mpc.output(res)
+    Results = await mpc.output(sec_vec)
     print("Election results: ", Results)
 
     return Results
 
-async def most_voted() -> list:
+async def most_voted(sec_vec: list) -> list:
     ''' Reveals the position of the most voted candidate '''
 
-    _, mv = await elect()
-    i, _ = mpc.argmax(mv)
+    i, _ = mpc.argmax(sec_vec)
     k = await mpc.output(i)
     winner = [0] * num_choice
     winner[k] = 1
@@ -147,11 +150,14 @@ if __name__ == '__main__':
     mpc.run(mpc.start())
 
     # Do election
-    # write_votes_to_file('votes.txt')
-    mpc.run(elect())
-    # mpc.run(read_votes_from_file('votes.txt'))
-    # mpc.run(reveal_votes())
-    mpc.run(most_voted())
+    if filename:
+        _, sec_vec = mpc.run(read_votes_from_file(filename))
+        mpc.run(reveal_votes(sec_vec))
+        # mpc.run(most_voted(sec_vec))
+    else:
+        _, sec_vec = mpc.run(elect_random())
+        mpc.run(reveal_votes(sec_vec))
+        # mpc.run(most_voted(sec_vec))
 
     # End Runtime
     mpc.run(mpc.shutdown())
