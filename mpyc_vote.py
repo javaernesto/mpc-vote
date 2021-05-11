@@ -25,27 +25,24 @@ def setup():
     parser = argparse.ArgumentParser()
 
     group = parser.add_argument_group('Election configuration')
-    group.add_argument('-v', '--voters', type=int, help='Set the number of voters for the election')
-    group.add_argument('-c', '--choices', type=int, help='Set the number of choices for the election')
-    group.add_argument('--read-file', type=str, help='Provide file contatining the votes')
+    group.add_argument('-v', '--voters', metavar='v', type=int, help='Set the number of voters for the election')
+    group.add_argument('-c', '--choices', metavar='c', type=int, help='Set the number of choices for the election')
+    group.add_argument('--read-file', metavar='filename', type=str, help='Provide file containing the votes')
+
+    group = parser.add_argument_group('Results configuration')
+    group.add_argument('--results', action='store_true', default=False, help='Show number of votes by choice')
+    group.add_argument('--winner', action='store_true', default=False, help='Show only the winner of the election')
 
     args = parser.parse_args()
 
+    # Parsing errors handling
     if args.read_file and (args.voters or args.choices):
         print("Error parsing config: --read-file and -v | -c are mutually exclusive")
         sys.exit(2)
-
-    if args.read_file:
-        filename = args.read_file
-        with open(filename, 'r') as f:
-            content = f.read().splitlines()
-        # Check all votes have the same length
-        num_choice = len(json.loads(content[0]))
-        assert all(len(json.loads(line)) == num_choice for line in content[1:]), "Bad votes file. Try again"
-        # Check number of votes
-        num_voters = len(content)
-
-        return num_choice, num_voters, filename
+    if args.results and args.winner:
+        print("Error parsing config: --results and --winner are mutually exclusive")
+        print("Run python {} -h for help".format(parser.prog))
+        sys.exit(3)
 
     if args.voters:
         num_voters = args.voters
@@ -59,11 +56,28 @@ def setup():
     else:
         num_choice = 5
         print("Setting number of choices to default = {}".format(num_choice))
+    if args.winner:
+        print("Showing only the winner of the election")
+        res, win = False, True
+    else:
+        print("Showing the numbers of votes by choice")
+        res, win = True, False
+    if args.read_file:
+        filename = args.read_file
+        with open(filename, 'r') as f:
+            content = f.read().splitlines()
+        # Check all votes have the same length
+        num_choice = len(json.loads(content[0]))
+        assert all(len(json.loads(line)) == num_choice for line in content[1:]), "Bad votes file. Try again"
+        # Check number of votes
+        num_voters = len(content)
 
-    return num_choice, num_voters, None
+        return num_choice, num_voters, filename, res, win
+
+    return num_choice, num_voters, None, res, win
 
 # Config election parameters
-num_choice, num_voters, filename = setup()
+num_choice, num_voters, filename, res, win = setup()
 
 def write_votes_to_file(filename: str) -> None:
     ''' Writes a designated number of random votes into file '''
@@ -96,7 +110,6 @@ async def read_votes_from_file(filename: str) -> list:
 
     return sec_votes, votes_sum
         
-
 async def to_vote(sec_c: secint) -> list:
     ''' Individual vote for one candidate (0 <= `sec_c` < `num_choice`) '''
 
@@ -152,12 +165,16 @@ if __name__ == '__main__':
     # Do election
     if filename:
         _, sec_vec = mpc.run(read_votes_from_file(filename))
-        mpc.run(reveal_votes(sec_vec))
-        # mpc.run(most_voted(sec_vec))
+        if res:
+            mpc.run(reveal_votes(sec_vec))
+        if win:
+            mpc.run(most_voted(sec_vec))
     else:
         _, sec_vec = mpc.run(elect_random())
-        mpc.run(reveal_votes(sec_vec))
-        # mpc.run(most_voted(sec_vec))
+        if res:
+            mpc.run(reveal_votes(sec_vec))
+        if win:
+            mpc.run(most_voted(sec_vec))
 
     # End Runtime
     mpc.run(mpc.shutdown())
