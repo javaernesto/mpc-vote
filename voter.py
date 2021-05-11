@@ -39,8 +39,6 @@ def main():
 		v[j] = 1
 		myVote = cvote(v, i + 1) 
 		send(myVote, address, ports)
-		test = '1' * 100
-		socket_send(test, 'localhost', 2004)
 
 if __name__ == '__main__':
 	main()
