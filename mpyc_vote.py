@@ -48,13 +48,11 @@ def setup():
     parser = argparse.ArgumentParser()
 
     group = parser.add_argument_group('Election configuration')
-    group.add_argument('-v', '--voters', metavar='v', type=int, help='Set the number of voters for the election')
-    group.add_argument('-c', '--choices', metavar='c', type=int, help='Set the number of choices for the election')
-    group.add_argument('--read-file', metavar='filename', type=str, help='Provide file containing the votes')
-    group.add_argument('--random', action='store_true', default=False, help='Do the election randomly')
+    group.add_argument('-v', '--voters', metavar='V', type=int, help='Set the number of voters for the election')
+    group.add_argument('-c', '--choices', metavar='C', type=int, help='Set the number of choices for the election')
+    group.add_argument('--read-file', metavar='FILE', type=str, help='Provide file containing the votes')
 
     group = parser.add_argument_group('Results configuration')
-    group.add_argument('--results', action='store_true', default=False, help='Show number of votes by choice')
     group.add_argument('--winner', action='store_true', default=False, help='Show only the winner of the election')
 
     args = parser.parse_args()
@@ -63,13 +61,6 @@ def setup():
     if args.read_file and (args.voters or args.choices):
         print("Error parsing config: --read-file and -v | -c are mutually exclusive")
         sys.exit(2)
-    if args.results and args.winner:
-        print("Error parsing config: --results and --winner are mutually exclusive")
-        print("Run python {} -h for help".format(parser.prog))
-        sys.exit(3)
-    if args.read_file and args.random:
-        print("Error parsing config: --read-file and --random are mutually exclusive")
-        sys.exit(4)
 
     if args.voters:
         num_voters = args.voters
@@ -143,7 +134,7 @@ async def to_vote(sec_c: secint) -> list:
     # assert (0 <= c) and (c < num_choice), "Your vote is not valid"
     vote[c] = 1
     sec = list(map(secint, vote))
-    sec_vote = mpc.input(sec)[mpc.pid]
+    sec_vote = mpc.input(sec, senders=mpc.pid)
     
     return sec_vote
 
