@@ -36,10 +36,10 @@ class ElectionManager:
         ''' Allows to represent the params of the election '''
         a = "Launching election with the following parameters:\n"
         b = "Number of choices = 5 (default)\n" if self.num_choice == 5 else "Number of choices = {}\n".format(self.num_choice)
-        c = "Number of voters = 5 (default)\n" if self.num_voters == 10 else "Number of voters = {}\n".format(self.num_voters)
-        d = "Show results = True" if self.res else "Show winner = True"
-
-        return a + b + c +d
+        c = "Number of voters = 10 (default)\n" if self.num_voters == 10 else "Number of voters  = {}\n".format(self.num_voters)
+        d = "Show results = True (default)" if self.res else "Show winner = True"
+ 
+        return a + b + c + d
 
 
 def setup():
@@ -143,9 +143,9 @@ async def to_vote(sec_c: secint) -> list:
     # assert (0 <= c) and (c < num_choice), "Your vote is not valid"
     vote[c] = 1
     sec = list(map(secint, vote))
-    mpc.input(sec)
+    sec_vote = mpc.input(sec)[mpc.pid]
     
-    return sec
+    return sec_vote
 
 async def elect_input() -> list:
     ''' Do the election. Asks for input for `num_voters` voters. 
@@ -203,7 +203,7 @@ async def most_voted(sec_vec: list) -> list:
     k = await mpc.output(i)
     winner = [0] * em.num_choice
     winner[k] = 1
-    print("Winner results  : ", winner)
+    print("Winner results: ", winner)
 
     return winner
          
@@ -225,6 +225,8 @@ if __name__ == '__main__':
             mpc.run(reveal_votes(sec_vec))
         if em.win:
             mpc.run(most_voted(sec_vec))
+
+    # Test
 
     # End Runtime
     mpc.run(mpc.shutdown())
