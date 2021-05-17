@@ -26,13 +26,13 @@ First you will need to install MPyC (Python package for secure multiparty comput
 
 1. **Launch the script locally on one computer** (with `m` parties).
  For that, use the flag `'-M'` provided by MPyC to set the number of parties. For example, to launch the election locally on your computer with two parties (e.g. Alice and Bob), write:
- `python mpyc_vote.py -M 2`
+ ```python mpyc_vote.py -M 2```
 
 2. **Launch the script on one or more machines via the command line.** 
  Use the flag `'-P'` followed by an address in the format `addr=host:port`. The party that will launch the script must leave its `host` field blank. For example, to launch the election with two parties on the same host, one can launch
- `python mpyc_vote.py -P :8888 -P localhost:8889`
+ ```python mpyc_vote.py -P :8888 -P localhost:8889```
  assuming the party launching the script will be listening on port 8888. In this same example, the other party should open another terminal window and write
-`python mpyc_vote.py -P localhost:8888 -P :8889`
+ ```python mpyc_vote.py -P localhost:8888 -P :8889```    
 
 3. **Launch the script on one or more machines via configuration files** (INI files).
  Use the flag `'-C'` or `'--config'` followed by the name of a .ini file. The INI file must be placed in a folder `.config` in the same directory as the script `mpyc_vote.py`. Each party must have a INI file. Continuing with the above example, the first party must have a INI file called `Party_0.ini` that looks like this:
@@ -46,13 +46,13 @@ First you will need to install MPyC (Python package for secure multiparty comput
  port = 8889
  ```
  again with the `host` field of the party launching the script left blank. Then one can launch the script with the following instruction:
- `python mpyc_vote.py -C Party_0.ini`
+ ```python mpyc_vote.py -C Party_0.ini```
  The other party should open a terminal window and launch the same instruction, this time with `Party_1.ini` written in an analogous fashion as `Party_0.ini`.
 
 Once these configurations are set, you can past additional arguments such as the number of voters (with the flag `'-v'` or `'--voters'`) and the number of choices in the election (with the flag `'-c'` or `'--choices'`). The default parameters are set for a number of voters equal to 10 and a number of choices equal to 5. Additionally, you can specify if you want to see only the winner of the election (with the flag `--winner`) or the complete number of votes for each candidate (default). With the flag `--read-file` you can pass a file contaning the votes in a list format to do the election.
 
 Use `-h`, `--help` option to see the help message.
-`python mpyc_vote -h`
+```python mpyc_vote -h```
 ```
 usage: mpyc_vote.py [-h] [-v V] [-c C] [--read-file FILE] [--winner]
 
@@ -69,4 +69,4 @@ Results configuration:
 ```
 
 As a final example, we illustrate how the launch an election locally on one computer with 2 parties, 100 voters, 10 choices, and showing only the winner. Open a terminal and type:
-`python mpyc_vote.py -M 2 -v 100 -c 10 --winner`
+```python mpyc_vote.py -M 2 -v 100 -c 10 --winner```
