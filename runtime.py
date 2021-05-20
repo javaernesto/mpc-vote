@@ -61,10 +61,12 @@ class Runtime:
 	sending them triples, edaBits, ...
 	'''
 
-	def __init__(self, players: list):
+	def __init__(self, pid: int, players: list):
 		'''	Initializes the MPC runtime with number of players '''
 
 		self.players = players
+		self.pid = pid
+		self.M = len(players)
 		self.provider = Player(0,'localhost', 2000)
 
 	def addPlayer(self, player: Player):
@@ -76,24 +78,25 @@ class Runtime:
 		'''	Starts the MPC runtime '''
 
 		# Start provider
-		try:
-			self.provider.conn.bind((provider.host, provider.port))
-		except socket.error as e:
-			print(str(e))
-
-		print("Provider is connected...")
-		self.provider.conn.listen()
-
-		# Start players
-		for player in self.players:
-
+		if self.pid is None:
 			try:
-				player.conn.bind((player.host, player.port))
+				self.provider.conn.bind((self.provider.host, self.provider.port))
 			except socket.error as e:
 				print(str(e))
 
-			print("Player {} is connected...".format(player.pid))
-			player.conn.listen()
+			print("Provider is connected...")
+			self.provider.conn.listen()
+
+		# Start players
+		else:
+			for i in range(self.pid, self.M):
+				try:
+					self.players[i].conn.bind((self.players[self.pid].host, self.players[self.pid].port))
+				except socket.error as e:
+					print(str(e))
+
+				print("Player {} is connected...".format(self.pid))
+				self.players[i].conn.listen()
 	
 	def doElection(self):
 		'''
@@ -193,12 +196,12 @@ class Runtime:
 
 		return shares
 
-	def getTriples(self, ize=num_choice):
+	def getTriples(self, size=num_choice):
 		''' Creates multiplication triple '''
 
 		aa = np.random.randint(0, P, size)
 		bb = np.random.randint(0, P, size)
-		cc = (a * b) % P
+		cc = (aa * bb) % P
 		a = self.getShares(aa)
 		b = self.getShares(bb)
 		c = self.getShares(cc)
