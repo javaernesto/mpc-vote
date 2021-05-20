@@ -1,23 +1,27 @@
 import numpy as np
-import pickle
+import json
 from multiprocessing import Process, Manager
 import math
+import ast
 
 
 class Protocols:
-    def __init__(self, identity, charlie, player, length, modulo, precision):
+    def __init__(self, identity, charlie, player, length, modulo, numbers_size, precision):
         self.identity = identity
         self.charlie = charlie
         self.player = player
         self.length = length
         self.modulo = modulo
+        self.numbers_size = numbers_size
         self.precision = precision
 
     def add(self, x, y, mod):
-        return (x + y) % mod
+        z = x + y
+        return z
 
     def subs(self, x, y, mod):
-        return (x - y) % mod
+        z = x - y
+        return z
 
     def add_const(self, x, k, mod):
         if self.identity == 0:
@@ -28,11 +32,11 @@ class Protocols:
         return self.add_const(self, x, -k, mod)
 
     def mult(self, x, y, mod):
-        triple = pickle.dumps(['triple', mod, x.shape])
-        self.charlie.send(triple)
+        triple = json.dumps(['triple', mod, x.shape])
+        self.charlie.sendall(bytes(triple, encoding="utf-8"))
         triple = self.charlie.recv(self.length)
-        triple = pickle.loads(triple)
-        a, b, c = np.array(triple[0], dtype="object"), np.array(triple[1], dtype="object"), np.array(triple[2], dtype="object")
+        triple = eval(triple.decode("utf-8"))
+        a, b, c = np.array(triple[0]), np.array(triple[1]), np.array(triple[2])
         d = self.subs(x, a, mod)
         e = self.subs(y, b, mod)
         message = [d.tolist(), e.tolist()]
@@ -41,8 +45,27 @@ class Protocols:
         e = message[1]
         z = self.add_const(c + d * b + e * a, e * d, mod)
         if mod != 2:
-            z = np.floor(z/10**self.precision).astype(int)
+            z = self.truncate(z, mod)
         return z
+
+    def truncate(self, x, mod):
+        x = self.add_const(x, int(self.numbers_size), mod)
+        pair = json.dumps(['pair', mod, 2**self.precision, self.numbers_size, x.shape])
+        self.charlie.sendall(bytes(pair, encoding="utf-8"))
+        pair = self.charlie.recv(self.length)
+        pair = eval(pair.decode("utf-8"))
+        r1, r2 = np.array(pair[0]), np.array(pair[1])
+        r = 2**self.precision*r2+r1
+        c = self.add(x, r, mod)
+        message = self.reconstruct(c.tolist(), mod)
+        c = message
+        r1_ = (-r1) % mod
+        c_ = c % 2**self.precision
+        a_ = self.add_const(r1_, c_, mod)
+        inverse = math.floor(((mod+1)/2)**self.precision) % mod
+        d = ((x - a_) * inverse) % mod
+        d = self.add_const(d, -int(self.numbers_size / 2 ** self.precision), mod)
+        return d
 
     def reconstruct(self, x, mod):
         self.broadcast(x)
@@ -51,17 +74,19 @@ class Protocols:
         return np.sum(y, 0) % mod
 
     def close_connexion_with_charlie(self):
-        message = pickle.dumps('close')
-        self.charlie.send(message)
+        message = json.dumps('close')
+        self.charlie.sendall(bytes(message, encoding="utf-8"))
 
     def broadcast(self, message):
-        message = pickle.dumps(message)
+        if type(message) != list:
+            message = message.tolist()
+        message = json.dumps(message)
         for i in range(len(self.player)):
-            self.player[i].send(message)
+            self.player[i].sendall(bytes(message, encoding="utf-8"))
 
     def receive_from(self, i, y):
         message = self.player[i].recv(self.length)
-        a = pickle.loads(message)
+        a = eval(message.decode("utf-8"))
         y[i] = a
 
     def receive_broadcast(self):
@@ -99,10 +124,10 @@ class Protocols:
         return w
 
     def convert_from_bin(self, x, mod):
-        eda = pickle.dumps(['eda', 1, 1, mod, x.shape])
-        self.charlie.send(eda)
+        eda = json.dumps(['eda', 1, 1, mod, x.shape])
+        self.charlie.sendall(bytes(eda,encoding="utf-8"))
         eda = self.charlie.recv(self.length)
-        eda = pickle.loads(eda)
+        eda = eval(eda.decode("utf-8"))
         r, r_bin = np.array(eda[0], dtype="object"), np.array(eda[1], dtype="object")
         r_bin.shape = x.shape
         y = self.reconstruct(self.add(x, r_bin, 2), 2)
@@ -112,10 +137,11 @@ class Protocols:
     # devrait retourner x secret < c publique dans l'anneau
     def rabbit_compare(self, x, c, mod):
         k = math.floor(math.log(mod, 2))+2
-        eda = pickle.dumps(['eda', mod, k, mod, x.shape])
-        self.charlie.send(eda)
+        eda = json.dumps(['eda', mod, k, mod, x.shape])
+        self.charlie.sendall(str.encode(eda))
         eda = self.charlie.recv(self.length)
-        eda = pickle.loads(eda)
+        eda = eda.decode("utf-8")
+        eda = ast.literal_eval(eda)
         r, r_bin = np.array(eda[0], dtype="object"), np.array(eda[1], dtype="object")
         a = (x+r) % mod
         a = self.reconstruct(a, mod)

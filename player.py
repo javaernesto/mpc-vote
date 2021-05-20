@@ -1,5 +1,5 @@
 import socket
-import pickle
+import json
 import common
 import numpy as np
 import time
@@ -18,8 +18,9 @@ def get_votes(x, length, server, t):
         try:
             server.settimeout(1)
             conn, address = server.accept()
-            pickled_message = conn.recv(length)
-            x.append(pickle.loads(pickled_message))
+            message = conn.recv(length)
+            message = json.loads(message)
+            x.append(np.array(message))
             conn.close()
         except:
             continue
@@ -44,28 +45,28 @@ def connect_to_charlie(ip, port):
     return server
 
 
-def evaluate(identity, charlie, player, length, mod, precision, x):
-    other_players = player[:identity]+player[identity+1:]
-    function = common.Function(identity, charlie, other_players, length, mod, precision)
+def evaluate(identity, charlie, player, length, mod, precision, numbers_size, x):
+    other_players = player[:identity] + player[identity + 1:]
+    function = common.Function(identity, charlie, other_players, length, mod, numbers_size, precision)
     y = function.function(x)
     return y
 
 
-def main(identity, length, ip_charlie, port_charlie, ips, ports, mod, precision):
+def main(identity, length, ip_charlie, port_charlie, ips, ports, mod, precision, numbers_size):
     ip_charlie, port_charlie = ip_charlie[0], port_charlie[0]
     text = open('players.txt', 'a')
-    text.write('\n'*identity)
+    text.write('\n' * identity)
 
     player = [0] * len(ips)
     player[identity] = create_server_identity(identity, ips, ports)
     print(f'{identity} is online')
     x = []
-    get_votes(x, length, player[identity], 3)
+    get_votes(x, length, player[identity], 5)
     print(f'{identity} has closed the voting')
     player[identity].setblocking(True)
-    x = np.array(x)
+    # x = np.array(x)
     text.write(f'{identity} : {x} \n')
-    
+
     connect_before(player, identity, ips, ports, text)
     connect_after(player, identity, ips)
 
@@ -74,7 +75,7 @@ def main(identity, length, ip_charlie, port_charlie, ips, ports, mod, precision)
     print(f'{identity} is now connected to charlie')
 
     print(f'{identity} is now evaluating the MPC protocol')
-    y = evaluate(identity, charlie, player, length, mod, precision, x)
+    y = evaluate(identity, charlie, player, length, mod, precision, numbers_size, x)
     if identity == 0:
         print(y)
 

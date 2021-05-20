@@ -1,5 +1,5 @@
 import socket
-import pickle
+import json
 import numpy as np
 
 
@@ -11,8 +11,6 @@ def generate_vote(candidates_number):
 
 
 def secret_share(x, mod, num_players):
-    x = np.array(x) % mod
-    print(x)
     shares = []
     for i in range(num_players):
         shares.append(np.random.randint(0, mod, x.shape).tolist())
@@ -31,21 +29,21 @@ def connect(ips, ports):
 def send_vote(vote, player):
     for j in range(len(player)):
         message = vote[j]
-        player[j].send(pickle.dumps(message))
+        message = json.dumps(message)
+        player[j].sendall(bytes(message, encoding="utf-8"))
         player[j].close()
 
 
-def main(ips, ports, mod, precision):
+def main(ips, ports, mod, precision, numbers_size):
     text = open('client.txt', 'w')
     player = connect(ips, ports)
-    vote = np.random.uniform(-10, 10, (4, 3, 2))
-    print(vote)
-    vote = vote*(10**precision) # generate_vote(5)
-    vote = np.floor(vote).astype(int)
+    vote = np.array([[1.25, 0.5, 2, -3.5], [-2.5, 5, -2, -0.75]])
+    vote = np.floor(vote * 2**precision).astype(int)
+    print(mod)
+    #print('\n x', vote)
+    #print('x^3', vote**3)
     text.write(f'{vote} \n')
     vote = secret_share(vote, mod, len(ips))
     send_vote(vote, player)
     print("A client has just voted")
     text.close()
-    
-

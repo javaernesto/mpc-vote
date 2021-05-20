@@ -1,5 +1,5 @@
 import socket
-import pickle
+import json
 import numpy as np
 from multiprocessing import Process, Manager
 import math
@@ -15,7 +15,7 @@ def not_same(messages):
 
 def get_message(connection, length, messages, i):
     message = connection.recv(length)
-    message = pickle.loads(message)
+    message = eval(message.decode("utf-8"))
     messages[i] = message
 
 
@@ -43,6 +43,9 @@ def listen(charlie, connections, length):
         elif 'eda' == messages[0][0]:
             send_eda(connections, messages[0][1], messages[0][2], messages[0][3], messages[0][4])
 
+        elif 'pair' == messages[0][0]:
+            send_pair(connections, messages[0][1], messages[0][2], messages[0][3], messages[0][4])
+
 
 def secret_share(x, mod, num_players):
     x = np.array(x)
@@ -55,8 +58,8 @@ def secret_share(x, mod, num_players):
 
 def send_to_all(connections, shares):
     for i in range(len(connections)):
-        message = pickle.dumps(shares[i])
-        connections[i].send(message)
+        message = json.dumps(shares[i])
+        connections[i].sendall(str.encode(message))
 
 
 def prepare(a):
@@ -66,14 +69,23 @@ def prepare(a):
     return shares
 
 
-def send_triple(connections, p, shape):
-    a = np.random.randint(0, p, shape)
-    b = np.random.randint(0, p, shape)
-    c = (a*b) % p
-    a = secret_share(a, p, len(connections))
-    b = secret_share(b, p, len(connections))
-    c = secret_share(c, p, len(connections))
+def send_triple(connections, mod, shape):
+    a = np.random.randint(0, mod, shape)
+    b = np.random.randint(0, mod, shape)
+    c = (a*b) % mod
+    a = secret_share(a, mod, len(connections))
+    b = secret_share(b, mod, len(connections))
+    c = secret_share(c, mod, len(connections))
     shares = prepare([a, b, c])
+    send_to_all(connections, shares)
+
+
+def send_pair(connections, mod, precision, numbers_size, shape):
+    r1 = np.random.randint(0, precision, shape)
+    r2 = np.random.randint(0, math.floor(numbers_size/precision), shape)
+    r1 = secret_share(r1, mod, len(connections))
+    r2 = secret_share(r2, mod, len(connections))
+    shares = prepare([r1, r2])
     send_to_all(connections, shares)
 
 

@@ -1,9 +1,9 @@
 from subprocess import Popen
 import time
-
+import prime
 
 class Mpc:
-    def __init__(self, length=None, modulo=None, precision=None):
+    def __init__(self, length=None, modulo=None, numbers_size= None, precision=None):
         self.ids = []
         self.ips = []
         self.ports = []
@@ -13,12 +13,16 @@ class Mpc:
             self.length = 4096
         else:
             self.length = length
+        if numbers_size is None:
+            self.numbers_size = 2**12
+        else:
+            self.numbers_size = numbers_size
         if modulo is None:
-            self.modulo = 2**32
+            self.modulo = prime.find_next_prime(self.numbers_size*2)
         else:
             self.modulo = modulo
         if precision is None:
-            self.precision = 3
+            self.precision = 4
         else:
             self.precision = precision
 
@@ -36,9 +40,11 @@ class Mpc:
                                f' {len(self.ids)})'])
         for i in range(len(self.ids)):
             Popen(['python', '-c', f'import player; player.main({self.ids[i]}, {self.length}, {self.ip_provider},'
-                                   f' {self.port_provider}, {self.ips}, {self.ports}, {self.modulo}, {self.precision})'])
+                                   f' {self.port_provider}, {self.ips}, {self.ports}, {self.modulo}, {self.precision}, '
+                                   f'{self.numbers_size})'])
             time.sleep(0.5)
-        Popen(['python', '-c', f'import client; client.main({self.ips}, {self.ports}, {self.modulo}, {self.precision})'])
+        Popen(['python', '-c', f'import client; client.main({self.ips}, {self.ports}, {self.modulo}, {self.precision}, '
+                               f'{self.numbers_size})'])
 
 
 

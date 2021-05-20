@@ -1,20 +1,25 @@
 import protocols
 import launch
 import numpy as np
+import time
+import matplotlib.pyplot as plt
 
 
 class Function(protocols.Protocols):
-    def __init__(self, identity, charlie, player, length, modulo, precision):
-        super().__init__(identity, charlie, player, length, modulo, precision)
+    def __init__(self, identity, charlie, player, length, modulo, numbers_size, precision):
+        super().__init__(identity, charlie, player, length, modulo, numbers_size, precision)
 
     def function(self, x):
-        shape = x.shape
-        a = np.array([self.modulo/2]*np.prod(shape)).astype(int)
-        a.shape = shape
-        t = self.rabbit_compare(x, a, self.modulo)
+        y = x[0][1]
+        x = x[0][0]
+        z = self.mult(x, y, self.modulo)
+        z = self.reconstruct(z, self.modulo)
+        z = (((z + self.numbers_size) % self.modulo) - self.numbers_size)/2**self.precision
+        if self.identity == 0:
+            print(z)
+            # print((((z+self.numbers_size/2) % self.modulo) - self.numbers_size/2)/(2**self.precision))
         self.close_connexion_with_charlie()
-        z = self.reconstruct(t, self.modulo)
-        return z
+        return 0
 
 
 def main():
