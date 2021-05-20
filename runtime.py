@@ -1,5 +1,4 @@
 import socket
-import os
 from _thread import start_new_thread
 import json
 import numpy as np
@@ -55,7 +54,7 @@ class Player:
 
 		return total
 		
-class mpc:
+class Runtime:
 	'''
 	MPC class for making interaction between players. In our case, we only use two players 
 	(Alice and Bob), and later use Charlie that communicates with Alice and Bob 
@@ -78,12 +77,12 @@ class mpc:
 
 		# Start provider
 		try:
-				self.provider.conn.bind((provider.host, provider.port))
-			except socket.error as e:
-				print(str(e))
+			self.provider.conn.bind((provider.host, provider.port))
+		except socket.error as e:
+			print(str(e))
 
-			print("Provider is connected...")
-			provider.conn.listen()
+		print("Provider is connected...")
+		self.provider.conn.listen()
 
 		# Start players
 		for player in self.players:
@@ -181,7 +180,7 @@ class mpc:
 		else:	
 			return (a - b) % P
 
-	def getShares(x, size=num_choice):
+	def getShares(self, x, size=num_choice):
 		''' Creates shares for MPC players '''
 
 		if type(x) != np.ndarray:
@@ -189,20 +188,20 @@ class mpc:
 
 		shares = []
 		for _ in range(len(self.players)):
-			shares.append(np.random.randint(0, P, size=size)
+			shares.append(np.random.randint(0, P, size=size))
 		shares[0] = (x - np.sum(shares, 0) + shares[0]) % P
 
 		return shares
 
-	def getTriples(size=num_choice):
+	def getTriples(self, ize=num_choice):
 		''' Creates multiplication triple '''
 
 		aa = np.random.randint(0, P, size)
 		bb = np.random.randint(0, P, size)
 		cc = (a * b) % P
-		a = getShares(aa)
-		b = getShares(bb)
-		c = getShares(cc)
+		a = self.getShares(aa)
+		b = self.getShares(bb)
+		c = self.getShares(cc)
 		
 		return a, b, c
 
@@ -210,15 +209,15 @@ class mpc:
 	def mul(self, a: int, b: int):
 		''' Secure multiplication of a and b '''
 
-		aa, bb, cc = getTriples()
+		aa, bb, cc = self.getTriples()
 
 if __name__ == '__main__':
 	Alice = Player(0, 'localhost', 2004, 10)
 	Bob = Player(1, 'localhost', 2005, 10)
 	
-	Runtime = mpc([Alice, Bob])
-	Runtime.start()
+	mpc = Runtime([Alice, Bob])
+	mpc.start()
 
-	Runtime.doElection()
-	Runtime.gatherVotes()
+	mpc.doElection()
+	mpc.gatherVotes()
 	
