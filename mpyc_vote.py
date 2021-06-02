@@ -133,10 +133,15 @@ async def to_vote(sec_c: secint) -> list:
 	c = await mpc.output(sec_c)
 	# assert (0 <= c) and (c < num_choice), "Your vote is not valid"
 	vote[c] = 1
-	sec = list(map(secint, vote))
-	sec_vote = mpc.input(sec, senders=mpc.pid)
+	# sec = list(map(secint, vote))
+	sec = [secint(v) for v in vote]
+	sec_vote = mpc.input(sec)
+	print(sec_vote[0][0].share)
+	# print("sec_cote field", sec_vote[0][0].field)
+	# print("sec_vote share", sec_vote[0][0].share)
+	# print(len(sec_vote))
 	
-	return sec_vote
+	return sec_vote[mpc.pid]
 
 async def elect_input() -> list:
 	''' Do the election. Asks for input for `num_voters` voters. 
@@ -229,14 +234,25 @@ async def elect_random() -> list:
 	assert len(votes) == em.num_voters
 	votes_sum = [secint(0)] * em.num_choice
 	for vote in votes:
+		# print(vote, type(vote), len(vote))
 		votes_sum = mpc.vector_add(votes_sum, vote)
+		print(mpc._program_counter)
+
+	# print("Player buffer", mpc.parties[mpc.pid].protocol.buffers)
+	# g = await mpc.gather(vote)
+	# print(vote, type(vote))
+	# print(g, type(g))
 
 	return votes, votes_sum   
 
 async def reveal_votes(sec_vec: list) -> list:
 	''' Reveals the result of the election (as a vector containing each number of votes by coordinate) '''
 	
+	print("sec_vec field", sec_vec[0].field)
+	print("sec_vec share", sec_vec[0].share)
 	Results = await mpc.output(sec_vec)
+	# print(r[0].value)
+	# print("sec_vec share", r[0].share)
 	print("Election results: ", Results)
 
 	return Results
@@ -266,7 +282,7 @@ if __name__ == '__main__':
 		if em.win:
 			mpc.run(most_voted(sec_vec))
 	else:
-		_, sec_vec = mpc.run(elect_input())
+		_, sec_vec = mpc.run(elect_random())
 		if em.res:
 			mpc.run(reveal_votes(sec_vec))
 		if em.win:
@@ -280,6 +296,6 @@ if __name__ == '__main__':
 	# print("Loop", mpc._loop)
 	# print("Program Counter", mpc._program_counter)
 	# print("Program Counter Level", mpc._pc_level)
-	
+
 	# End Runtime
 	mpc.run(mpc.shutdown())
