@@ -319,15 +319,16 @@ def main():
     # a = [29, 36, 112] # a = 48
     # d = TruncPr(a, 7, 2, p=3)
 
-    l = 10 # 2**7 = 128
-    d = 2
-    x = 507
-    r = np.random.randint(1 << l, dtype=int)
-    x_0, x_1 = (x + r, (1 << l) - r)
-    print("Avant x_0, x_1 =", x_0, x_1)
-    t_1, t_2 = TruncL(x_0, d, l, True), TruncL(x_1, d, l, False)
-    print("Après x_0, x_1 =", t_1, t_2)
-    print(((t_1 + t_2) - (1 << l)) in {(x >> d) - 1, (x >> d), (x >> d) + 1})
+    l = 10 # 2**10 = 1024
+    d = 9
+    x = 127
+    for i in range(5):
+        r = np.random.randint(0, 1 << l, dtype=int)
+        x_0, x_1 = (x + r, (1 << l) - r)
+        print("Avant x_0, x_1 =", x_0, x_1)
+        t_1, t_2 = TruncL(x_0, d, l, True), TruncL(x_1, d, l, False)
+        print("Après x_0, x_1 =", t_1, t_2)
+        print(((t_1 + t_2) - (1 << l)) in {(x >> d) - 1, (x >> d), (x >> d) + 1})
 
 if __name__ == '__main__':
     main()
