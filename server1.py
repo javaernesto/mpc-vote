@@ -47,7 +47,10 @@ async def handle_client(reader, writer):
 				print("Already voted")
 				break
 			else:
-				print("Allowed")
+				print("Allowed from", writer.get_extra_info('peername'))
+				# print(type(pubKeyString))
+				print("Cert begins with",\
+					   pubKeyString.decode().split('\n')[1][:24])
 				didvote.append(pubKeyString)
 				pub_key_dico = pubKeyString
 		else:
@@ -114,10 +117,11 @@ async def main():
 	print(myShares)
 
 	print("Ma part de {x + y + z}")
-	print(myShares['x'] + myShares['y'] + myShares['z'])
+	b = myShares['x'] + myShares['y'] + myShares['z']
+	print(b)
 
 	p = protocol.Proto(context, 0)
-	p.audit(2)
+	p.audit(b)
 
 if __name__ == "__main__":
 	loop = asyncio.get_event_loop()

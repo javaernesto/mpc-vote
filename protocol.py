@@ -41,7 +41,7 @@ class Proto:
 			s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 			# s.setblocking(False)
 			conn = context.wrap_socket(s, server_side=False,\
-									server_hostname=config.hostname)
+									   server_hostname=config.hostname)
 			conn.connect(('localhost', config.port_compteur_1_c))
 			self.conn = conn
 			print("Connected to S1")
@@ -60,14 +60,14 @@ class Proto:
 
 		if (self.id == 0):
 			msg = recv_int(self.conn)
-			print("Recv share")
+			# print("Recv share")
 			send_int(self.conn, share)
-			print("Output of share")
+			# print("Output of share")
 		elif (self.id == 1):
 			send_int(self.conn, share)
-			print("Sent share")
+			# print("Sent share")
 			msg = recv_int(self.conn)
-			print("Output of share")
+			# print("Output of share")
 
 		return msg + share		
 
@@ -172,7 +172,7 @@ class Proto:
 		i = m - 1
 		while i >= 0:
 			y[i] = x[i] ^ (R >> i & 1)
-			print("Step ", i)
+			# print("Step ", i)
 			z[i] = self.PrefixOR(y[i], z[i+1])
 			w[i] = z[i] - z[i+1]
 			i -= 1
@@ -196,13 +196,13 @@ class Proto:
 		# z = p.mul(3, 5)
 		# print(z)
 		c = self.LTZ(share)
-		print(c)
+		print("Sign", c)
 		send_int(self.aud, c)
 		# b = p.PrefixOR(0, 1)
 		# print(b)
 
 def send_int(s: socket.socket, x: int):
-	''' Send int `x``through socket `s` '''
+	''' Send int `x` through socket `s` '''
 
 	data = pickle.dumps(x)
 	s.send(data)
@@ -217,8 +217,9 @@ def recv_int(s: socket.socket):
 			break
 	
 		msg = pickle.loads(data)
-		if isinstance(msg, list):
-			msg = np.array(msg)
+		# if isinstance(msg, list):
+		# 	print(msg)
+		# 	msg = np.array(msg, dtype=int)
 
 		return msg
 
