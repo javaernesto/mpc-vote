@@ -31,7 +31,7 @@ def send_compteur(port: int, vecteur, context, hostname: str):
     conn = context.wrap_socket(s, server_side=False, server_hostname=hostname)
     conn.connect(('localhost', port))
     
-    print("Connexion établie avec le compteur :{}".format(conn.getpeername()))
+    print("Connexion établie avec le serveur :{}".format(conn.getpeername()))
     conn.send(pickle.dumps(vecteur))
 
 def send_x(crtfile: str, key_file: str):
@@ -47,9 +47,9 @@ def send_x(crtfile: str, key_file: str):
     x = protocol.generer_x()
     x_1, x_2 = protocol.distribute(x)
     send_compteur(config.port_compteur_1_v, x_1, context, hostname_c1)
-    print("On a envoyé le nombre ", x_1)
+    print("On a envoyé la part", x_1)
     send_compteur(config.port_compteur_2_v, x_2, context, hostname_c2)
-    print("On a envoyé le nombre ", x_2)
+    print("On a envoyé la part", x_2)
 
 if __name__ == "__main__":
 

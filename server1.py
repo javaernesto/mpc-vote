@@ -47,9 +47,9 @@ async def handle_client(reader, writer):
 				print("Already voted")
 				break
 			else:
-				print("Allowed from", writer.get_extra_info('peername'))
+				print("Connexion acceptée de", writer.get_extra_info('peername'))
 				# print(type(pubKeyString))
-				print("Cert begins with",\
+				print("Certificat commence par",\
 					   pubKeyString.decode().split('\n')[1][:24])
 				didvote.append(pubKeyString)
 				pub_key_dico = pubKeyString
@@ -64,7 +64,7 @@ async def handle_client(reader, writer):
 			print('Problème de lecture')
 			break
 		dico_a[pub_key_dico] = pickle.loads(data)
-		print("On a recu : ", pickle.loads(data))
+		print("Ma part de c :", pickle.loads(data))
 		myShares['x'] = pickle.loads(data)
 		break
 
@@ -99,6 +99,7 @@ def get_public_keys(num_voters: int):
 
 async def main():
 
+	print("Serveur 1")
 	get_public_keys(nbVotants)
 	
 	# Start server and listen for connections
@@ -113,12 +114,13 @@ async def main():
 	z_1 = compteur_exchange(config.port_compteur_1_c, context, y_2)
 	myShares['z'] = z_1
 
-	print("Ma part de z: ", z_1)
-	print(myShares)
+	print("Ma part de s2 :", z_1)
+	# print(myShares)
 
-	print("Ma part de {x + y + z}")
 	b = myShares['x'] + myShares['y'] + myShares['z']
-	print(b)
+	print("Ma part de c + s1 + s2 :", b)
+
+	await asyncio.sleep(5)
 
 	p = protocol.Proto(context, 0)
 	p.audit(b)

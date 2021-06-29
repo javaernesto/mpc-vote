@@ -35,7 +35,7 @@ class Proto:
 				with context.wrap_socket(sock, server_side=True) as ssock:
 					conn, _ = ssock.accept()
 			self.conn = conn
-			print("Connected to S2")
+			# print("Connected to S2")
 		elif (id == 1):
 			s = socket.socket(socket.AF_INET,socket.SOCK_STREAM, 0)
 			s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -44,7 +44,7 @@ class Proto:
 									   server_hostname=config.hostname)
 			conn.connect(('localhost', config.port_compteur_1_c))
 			self.conn = conn
-			print("Connected to S1")
+			# print("Connected to S1")
 
 		# Conect to audit
 		ss = socket.socket(socket.AF_INET,socket.SOCK_STREAM, 0)
@@ -53,7 +53,7 @@ class Proto:
 		aud = context.wrap_socket(ss, server_side=False)
 		aud.connect(('localhost', config.port_audit))
 		self.aud = aud
-		print("Connected to A")
+		print("Connecté à l'auditeur A")
 
 	def output(self, share: int) -> int:
 		''' Output value of share. Exchanges shares and return open value '''
@@ -76,8 +76,7 @@ class Proto:
 		Request edaBits to Audit
 		:returns triple (r, bits, rr), 
 				 r, rr:  random in [0, SIZE_OF_INT)
-				 bits: bit decomposition of r
-				 
+				 bits: bit decomposition of r	 
 		'''
 
 		send_int(self.aud, 'eda')
@@ -116,11 +115,11 @@ class Proto:
 
 		r, b, rr = self.reqEda()
 
-		c_1 = (1 << (k - 1)) + a + (rr >> m) + r
+		c_1 = (1 << (k - 1)) + a + (rr << m) + r
 		c = self.output(c_1)
 		cc = c % (1 << m)
 		u = self.LTBits(cc, b)
-		aa = cc - r + (u >> m)
+		aa = cc - r + (u << m)
 
 		return aa
 
@@ -184,6 +183,11 @@ class Proto:
 	def audit(self, share: int) -> None:
 		''' Handle all communication with audit (for comparison protocols) '''
 
+		while True:
+			data = recv_int(self.aud)
+			if data == 'cmp':
+				print("On commence le protocole de comparaison")
+				break
 		# protocol.send_int(p.aud, 'tri')
 		# a = protocol.recv_int(p.aud)
 		# print('tri', type(a), a)

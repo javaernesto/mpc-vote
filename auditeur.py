@@ -26,7 +26,7 @@ dico_a = dict()
 myShares = {'x': 0, 'y': 0, 'z': 0}
 
 def toBits(x: int):
-	''' Return list of bits of `x` '''
+	''' Return list of bits of `x` (MSB -> LSB) '''
 
 	return [int(x) for x in '{:0{size}b}'.format(x, size=config.BIT_NUM)]
 
@@ -39,8 +39,8 @@ def getEda():
 	ss = np.random.randint(0, config.SIZE_OF_INT, dtype=int)
 	s = protocol.distribute(ss)
 
-	# Split in bits
-	bb = toBits(rr)
+	# Split in bits and reverse (LSB -> MSB)
+	bb = toBits(rr)[::-1]
 	b = protocol.distribute(bb, mod=2)
 
 	return (r, b, s)
@@ -84,12 +84,10 @@ def accept(context: ssl.SSLSocket) -> list:
 
 	for i in {0, 1}:
 		conn, addr = ssock.accept()
-		# cert = ssl.get_server_certificate(addr)
-		print("Allowed from", addr)
-				# print(type(pubKeyString))
-		print("Cert begins with",\
+		print("Connexion acceptée de", addr)
+		# On affiche les 24 premiers caractères du certificat
+		print("Certificat commence par",\
 				pubkeys[i].decode().split('\n')[1][:24])
-		# print("Certificate is", pubkeys[i])
 		Conns.append(conn)
 
 	return Conns
@@ -102,6 +100,10 @@ def handle(connections: List[ssl.SSLSocket]) -> None:
 	S2.
 	'''
 
+	input("Appuyez sur une touche pour le protocole de comparaison")
+	for i in {0, 1}:
+		protocol.send_int(connections[i], 'cmp')
+
 	c_eda, c_tri = 0, 0
 	open_compare = 0
 	while True:
@@ -113,7 +115,7 @@ def handle(connections: List[ssl.SSLSocket]) -> None:
 					c_eda += 1
 				if data == 'tri':
 					c_tri += 1
-				if isinstance(data, int):
+				elif isinstance(data, int):
 					print("Received comparison shares")
 					open_compare += data
 			if (c_eda == 2):
@@ -134,12 +136,14 @@ def handle(connections: List[ssl.SSLSocket]) -> None:
 				connections[i].close()
 			break
 
-	print("The sign of {x + y + z} is", open_compare)
+	print("Le signe de c + s1 + s2 est", open_compare)
 
 async def main():
 
-	# Create SSL context for communication with C
+	print("Auditeur")
 	get_public_keys()
+
+	# Create SSL context for communication with C
 	context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
 	context.load_cert_chain(crtfile, keyfile=key_file)
 	context.load_verify_locations(cafile = cafile)
