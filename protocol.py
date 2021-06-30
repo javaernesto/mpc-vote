@@ -178,7 +178,7 @@ class Proto:
 
 		b = sum([(R >> i & 1) * w[i] for i in range(m)])
 		
-		return 1 - b
+		return (1 - b) % 2
 
 	def audit(self, share: int) -> None:
 		''' Handle all communication with audit (for comparison protocols) '''

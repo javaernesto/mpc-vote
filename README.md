@@ -20,6 +20,8 @@ python server2.py
 python client.py
 ```
 
+N.B. Appuyer sur ENTER lorsque l'auditeur le demandera. Ceci lancera le protocole de comparaison. Pour que l'auditeur affiche le résultat, interrompre son script avec Ctrl^C.
+
 ### Description de l'algorithme
 Pendant tout le déroulement du protocole, chaque secret sera partagé avec S1 et S2. Tous les secrets (`c`, `s1`, `s2` et `b`) seront donc partagés en deux parts. Pour partager un secret `x`, il suffit de choisir une valeur aléatoire `r` (un entier positif ou négatif), puis calculer `x - r`. Ainsi, on peut envoyer `x_1 := x - r` à S1 et `x_2 := r` à S2, de façon à ce que ni S1 ni S2 ne puissent connaître `x`, mais puissent le reconstituer en échageant leurs parts et en faisant `x = x_1 + x_2`.
 
