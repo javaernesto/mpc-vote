@@ -71,13 +71,27 @@ async def handle_client(reader, writer):
 def compteur_exchange(port: int, context: ssl.SSLSocket, share: int):
 	''' Echange share `share` between parties (S1 & S2) '''
 
+	# Setting SSL Socket
 	with socket.socket(socket.AF_INET, socket.SOCK_STREAM,0) as sock:
 		sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		sock.bind(('localhost', port))
 		sock.listen(10)
 		with context.wrap_socket(sock, server_side=True) as ssock:
-			conn, _ = ssock.accept()
+			conn, addr = ssock.accept()
+
+	# Retrieving certificate public key
+	file_path = os.path.join(os.getcwd(), 'Party_0.crt')
+	f = open(file_path, 'r')
+	cert = f.read()
+	crtObj = crypto.load_certificate(crypto.FILETYPE_PEM, cert)
+	pubKeyObject = crtObj.get_pubkey()
+	pubKeyString = crypto.dump_publickey(crypto.FILETYPE_PEM,pubKeyObject)
+	print("Connexion acceptée de", addr)
+	# On affiche les 24 premiers caractères du certificat
+	print("Certificat commence par",\
+		  pubKeyString.decode().split('\n')[1][:24])
 	
+	# S1 is server and S2 is client (when exchanging only btw S1 & S2)
 	msg = protocol.recv_int(conn)
 	protocol.send_int(conn, share)
 	conn.close()

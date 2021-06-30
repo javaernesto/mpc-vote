@@ -159,8 +159,8 @@ class Proto:
 
 	def LTBits(self, R: int, x: list) -> tuple:
 		''' 
-		Protocol for comparison between a secret input shared bitwise and a 
-		public value (see https://eprint.iacr.org/2021/119 Fig. 3 for details)
+		Protocol for comparison between a secret input x shared bitwise and a 
+		public value R (see https://eprint.iacr.org/2021/119 Fig. 3 for details)
 		'''
 
 		m = len(x)
@@ -199,6 +199,8 @@ class Proto:
 		# print("Mul")
 		# z = p.mul(3, 5)
 		# print(z)
+
+		# Compute share of {c + s1 + s2 < 0 ? 1 : 0} 
 		c = self.LTZ(share)
 		print("Sign", c)
 		send_int(self.aud, c)
@@ -212,7 +214,7 @@ def send_int(s: socket.socket, x: int):
 	s.send(data)
 
 def recv_int(s: socket.socket):
-	''' Receive int through socket `s` '''
+	''' Receive data through socket `s` '''
 
 	# Listen for incomming data
 	while True:

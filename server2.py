@@ -74,10 +74,13 @@ async def handle_client(reader, writer, data1):
 def compteur_exchange(port: int, context: ssl.SSLSocket, share: int) -> int:
 	''' Echange share `share` between parties (S1 & S2) '''
 
+	# Setting SSL Socket
 	s = socket.socket(socket.AF_INET,socket.SOCK_STREAM, 0)
 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	conn = context.wrap_socket(s, server_side=False, server_hostname=hostname)
 	conn.connect(('localhost', port))
+
+	# S2 is client and S1 is server (when exchanging only btw S1 & S2)
 	protocol.send_int(conn, share)
 	msg = protocol.recv_int(conn)
 	conn.close()

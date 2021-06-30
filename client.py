@@ -1,7 +1,6 @@
 import socket
 import ssl
 import os
-import time
 import os.path
 import pickle
 import numpy as np
